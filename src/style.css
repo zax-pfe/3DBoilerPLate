@@ -1,19 +1,26 @@
-*
-{
-    margin: 0;
-    padding: 0;
+* {
+  margin: 0;
+  padding: 0;
 }
 
-html,
-body
-{
-    overflow: hidden;
+html {
+  scroll-behavior: smooth;
+  overflow-y: scroll; /* nécessaire pour permettre le scroll */
+  scrollbar-width: none; /* Firefox */
 }
 
-.webgl
-{
-    position: fixed;
-    top: 0;
-    left: 0;
-    outline: none;
+html::-webkit-scrollbar {
+  display: none; /* Chrome, Edge, Safari */
+}
+.webgl {
+  position: sticky;
+  top: 0;
+  left: 0;
+  /* outline: none; */
+  /* width: 100%;
+  height: 100%; */
+}
+
+.canvas-container {
+  height: 500vh;
 }
