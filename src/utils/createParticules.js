@@ -9,9 +9,9 @@ export const createParticles = (scene, count = 500, safeRadius = 20) => {
     let distance;
     // ne pas créer des particules dans un rayon autour de la chambre
     do {
-      x = (Math.random() - 0.5) * 70;
-      y = (Math.random() - 0.5) * 70;
-      z = (Math.random() - 0.5) * 70;
+      x = (Math.random() - 0.5) * 50;
+      y = (Math.random() - 0.5) * 50;
+      z = (Math.random() - 0.5) * 50;
       distance = Math.sqrt(x * x + y * y + z * z);
     } while (distance < safeRadius);
 
