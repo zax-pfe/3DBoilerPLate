@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import vertexShader from "../shader/vertex.glsl";
 import fragmentShader from "../shader/fragment.glsl";
-const dreamShift = 30;
+const dreamShift = 50;
 
 // function addWall(){
 
@@ -30,8 +30,8 @@ export function createCorridor(scene) {
       lightDirection: {
         value: new THREE.Vector3(16.2, 17.22, -4.67).normalize(),
       },
-      lightColor: { value: new THREE.Color(1, 0.8, 1) }, // couleur violette pâle
-      baseColor: { value: new THREE.Color(0.6, 0.9, 0.8) }, // bleu clair
+      lightColor: { value: new THREE.Color(0.878, 0.953, 0.996) }, // couleur violette pâle
+      baseColor: { value: new THREE.Color(0.886, 0.114, 0.745) }, // bleu clair
     },
   });
 

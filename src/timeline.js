@@ -1,4 +1,6 @@
 import gsap from "gsap";
+import { enableScroll } from "./utils/scrollUtils";
+import { disableScroll } from "./utils/scrollUtils";
 
 export function createTimeline(
   camera,
@@ -9,7 +11,12 @@ export function createTimeline(
 ) {
   const timeline = gsap.timeline({
     paused: true,
-    onComplete: () => console.log("Timeline terminée !"),
+    onStart: () => {
+      console.log("Timeline démarrée");
+    },
+    onComplete: () => {
+      console.log("Timeline terminée ");
+    },
   });
 
   timeline.to(
@@ -37,6 +44,7 @@ export function createTimeline(
       duration: 1,
       opacity: 0,
       ease: "power1.inOut",
+      pointerEvents: "none",
     },
     0
   );
@@ -47,9 +55,9 @@ export function createTimeline(
       duration: 1,
       x: 50,
       y: 3,
-      z: 30,
+      z: 50,
       onComplete: () => {
-        controls.target.set(-8, 3, 29);
+        controls.target.set(-70, 3, 50);
         controls.update();
         directionalLight.position.set(70, 15, 30);
         directionalLight.rotation.set(0, 0, 0);
@@ -64,7 +72,7 @@ export function createTimeline(
       duration: 1,
       x: 40,
       y: 3,
-      z: 30,
+      z: 50,
     },
     2
   );

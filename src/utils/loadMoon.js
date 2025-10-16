@@ -13,7 +13,7 @@ export const loadMoon = (scene) => {
         child.material.metalness = 0.2;
         child.material.roughness = 0.3;
         child.material.emissive = new THREE.Color(0xffffff);
-        child.material.emissiveIntensity = 3;
+        child.material.emissiveIntensity = 10;
       }
     });
 

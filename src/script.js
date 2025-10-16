@@ -7,12 +7,15 @@ import { createLights } from "./utils/createLights";
 import { loadBedRoom } from "./utils/loadBedRoom";
 import { createParticles } from "./utils/createParticules";
 import { loadMoon } from "./utils/loadMoon";
-import gsap from "gsap";
 import { createCorridor } from "./utils/createCorridor";
 import { logCameraPos } from "./utils/logCameraPos";
 import { createTimeline } from "./timeline";
 import { loadMonster } from "./utils/loadMonsters";
 import { createDreamTimeline } from "./dreamTimeline";
+import { createLastTimeline } from "./lastTimeline";
+import { textSplitAnimation } from "./utils/textSplitAnimation";
+import { createFog } from "./utils/createFog";
+import { endingSplitAnimation } from "./utils/endingSplitAnimation";
 
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
@@ -33,77 +36,34 @@ const data = {
 };
 
 const colorData = {
-  baseColor: "#99e5cc", // correspond à 0.6,0.9,0.8
-  lightColor: "#ffccff", // correspond à 1,0.8,1
+  baseColor: "#ff66e3",
+  lightColor: "#e1f3fe",
 };
 
 let fogIntensity = data.newFogintensity;
+let activateBreathing = true;
+let breathingFrequency = 1;
+let breathingAmplitude = 0.001;
 
-/**
- * Base
- */
-// Debug
-const gui = new GUI();
-gui.add(data, "lightx", 0, 5, 0.1);
-gui.add(data, "lighty", 0, 5, 0.1);
-gui.add(data, "lightz", 0, 5, 0.1);
-gui.add(data, "homeMaxRotation", 0, 1, 0.01);
-gui.add(data, "homeRotationLerp", 0, 0.1, 0.01);
-gui.add(data, "newFogintensity", 0, 0.1, 0.001);
-
-gui.addColor(colorData, "baseColor").onChange((value) => {
-  floorMaterial.uniforms.baseColor.value.set(value);
-});
-
-gui.addColor(colorData, "lightColor").onChange((value) => {
-  floorMaterial.uniforms.lightColor.value.set(value);
-});
-
-// Canvas
+// CANVAS
 const canvas = document.querySelector("canvas.webgl");
-
-// Scene
 const scene = new THREE.Scene();
 
-// createLights(scene);
-const ambientLight = new THREE.AmbientLight("purple", 0.1);
+// CREATE THE LIGHTS
+const { ambientLight, directionalLight } = createLights();
 scene.add(ambientLight);
-
-const directionalLight = new THREE.DirectionalLight("purple", 10);
-directionalLight.position.set(16.2, 17.22, -4.67);
-
-const LightHelper = new THREE.DirectionalLightHelper(directionalLight, 1);
-scene.add(LightHelper);
 scene.add(directionalLight);
 
-createParticles(scene);
+// INSERT THE MESHES
+
+createParticles(scene, 500, 20, { x: 0, y: 0, z: 0 });
+createParticles(scene, 500, 0, { x: -75, y: 25, z: 50 });
+createParticles(scene, 500, 0, { x: -40, y: 5, z: 0 });
 loadMoon(scene);
+loadBedRoom(scene);
+createFog(scene, "black", fogIntensity, "exp2");
 const { group, floorMaterial } = createCorridor(scene);
 const uniforms = floorMaterial.uniforms;
-
-gui
-  .add(uniforms.noiseRatio, "value", 0.1, 20)
-  .min(0)
-  .max(1)
-  .step(0.01)
-  .name("noiseRatio");
-gui
-  .add(uniforms.noiseStrength, "value", 0.0, 10)
-  .min(0)
-  .max(3)
-  .step(0.01)
-  .name("Noise Strenght");
-scene.add(group);
-
-gui
-  .add(floorMaterial.uniforms.lightDirection.value, "x", -1, 1, 0.01)
-  .name("Light X");
-gui
-  .add(floorMaterial.uniforms.lightDirection.value, "y", -1, 1, 0.01)
-  .name("Light Y");
-gui
-  .add(floorMaterial.uniforms.lightDirection.value, "z", -1, 1, 0.01)
-  .name("Light Z");
 
 /**
  * Sizes
@@ -141,12 +101,11 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(8.12, 2.32, 4.53);
 camera.rotation.set(-0.57, 1.11, 0.52);
 
-// scene.add(camera);
 scene.add(camera);
 
 // Controls
 const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
+controls.enableDamping = false;
 controls.enableZoom = false;
 
 /**
@@ -173,25 +132,16 @@ composer.addPass(filmPass);
 
 const effect3 = new OutputPass();
 composer.addPass(effect3);
-
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-/**
- * Renderer
- */
-// const renderer = new THREE.WebGLRenderer({
-//   canvas: canvas,
-// });
-// renderer.setSize(sizes.width, sizes.height);
-// renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-const loader = new GLTFLoader();
-
-loadBedRoom(scene);
 
 const overlay = document.getElementsByClassName("overlay");
 const overlayPanel = document.getElementsByClassName("overlay-panel");
-const overlayText = document.getElementsByClassName("overlay-text");
+const overlayText = document.querySelector(".overlay-text");
+const endtext = document.querySelector(".endtext-container");
+
+// TIMELINES
+textSplitAnimation(overlayText);
+endingSplitAnimation(endtext);
 
 const timeline = createTimeline(
   camera,
@@ -203,6 +153,7 @@ const timeline = createTimeline(
 
 let monsterRef;
 let dreamTimeline = null;
+let lastTimeline = null;
 
 loadMonster(scene).then((monster) => {
   monsterRef = monster;
@@ -215,32 +166,48 @@ loadMonster(scene).then((monster) => {
     overlayPanel,
     overlayText
   );
+  lastTimeline = createLastTimeline(
+    camera,
+    controls,
+    overlayPanel,
+    overlayText,
+    monsterRef,
+    directionalLight
+  );
+  dreamTimeline.eventCallback("onComplete", () => {
+    lastTimeline.play();
+  });
+  lastTimeline.eventCallback("onComplete", () => {
+    console.log("Last timeline terminée");
+    activateBreathing = true;
+    breathingFrequency = 4;
+    breathingAmplitude = 0.0025;
+    endingTextTimeline.play();
+  });
 });
-
-const startBtn = document.getElementById("start");
-
-let buttonClicked = false;
-// -- Démarre la timeline au clic
 
 function activateScrollTimeline(scrollTimeline) {
   let scrollMax = document.body.scrollHeight - window.innerHeight;
 
   window.addEventListener("scroll", () => {
+    if (scrollTimeline.progress() >= 1) return;
+
     const scrollY = window.scrollY;
-    console.log("scrollY:", scrollY);
     const scrollProgress = scrollY / scrollMax;
     scrollTimeline.progress(scrollProgress);
   });
 }
 
+const startBtn = document.getElementById("start");
 startBtn.addEventListener("click", () => {
   timeline.play();
-  buttonClicked = true;
+  activateBreathing = false;
+  window.scrollTo(0, 0);
   timeline.eventCallback("onComplete", () => {
     console.log("Première timeline terminée — activation du scroll control");
+    window.scrollTo(0, 0);
     activateScrollTimeline(dreamTimeline);
   });
-  // scene.remove(bedroom);
 });
 
 /**
@@ -248,29 +215,15 @@ startBtn.addEventListener("click", () => {
  */
 
 let mouse = { x: 0, y: 0 };
-
 window.addEventListener("mousemove", (event) => {
   mouse.x = (event.clientX / window.innerWidth - 0.5) * 2;
   mouse.y = (event.clientY / window.innerHeight - 0.5) * 2;
-
-  // console.log("mouse:", mouse);
 });
-
-/**
- * Fog
- */
-
-function createFog() {
-  // scene.fog = new THREE.Fog("black", 5, 30);
-  scene.fog = new THREE.FogExp2("black", fogIntensity);
-}
-
-createFog();
 
 const timer = new Timer();
 const tick = () => {
   if (data.newFogintensity !== fogIntensity) {
-    createFog();
+    createFog(scene, "black", fogIntensity, "exp2");
   }
 
   fogIntensity = data.newFogintensity;
@@ -280,8 +233,10 @@ const tick = () => {
   const elapsedTime = timer.getElapsed();
   floorMaterial.uniforms.time.value = elapsedTime;
 
-  if (buttonClicked == false) {
-    camera.position.y = camera.position.y + Math.cos(elapsedTime) * 0.001;
+  if (activateBreathing == true) {
+    camera.position.y =
+      camera.position.y +
+      Math.cos(elapsedTime * breathingFrequency) * breathingAmplitude;
     controls.target.x +=
       (mouse.x * data.homeMaxRotation - controls.target.x) *
       data.homeRotationLerp;
@@ -293,10 +248,9 @@ const tick = () => {
   // Update controls
   controls.update();
 
-  // logCameraPos(camera);
+  // logCameraPos(camera, controls);
 
   // Render
-  // renderer.render(scene, camera);
   composer.render();
 
   // Call tick again on the next frame
@@ -304,3 +258,44 @@ const tick = () => {
 };
 
 tick();
+
+// Debug
+const gui = new GUI();
+gui.add(data, "lightx", 0, 5, 0.1);
+gui.add(data, "lighty", 0, 5, 0.1);
+gui.add(data, "lightz", 0, 5, 0.1);
+gui.add(data, "homeMaxRotation", 0, 1, 0.01);
+gui.add(data, "homeRotationLerp", 0, 0.1, 0.01);
+gui.add(data, "newFogintensity", 0, 0.1, 0.001);
+
+gui.addColor(colorData, "baseColor").onChange((value) => {
+  floorMaterial.uniforms.baseColor.value.set(value);
+});
+
+gui.addColor(colorData, "lightColor").onChange((value) => {
+  floorMaterial.uniforms.lightColor.value.set(value);
+});
+
+gui
+  .add(uniforms.noiseRatio, "value", 0.1, 20)
+  .min(0)
+  .max(1)
+  .step(0.01)
+  .name("noiseRatio");
+gui
+  .add(uniforms.noiseStrength, "value", 0.0, 10)
+  .min(0)
+  .max(3)
+  .step(0.01)
+  .name("Noise Strenght");
+scene.add(group);
+
+gui
+  .add(floorMaterial.uniforms.lightDirection.value, "x", -1, 1, 0.01)
+  .name("Light X");
+gui
+  .add(floorMaterial.uniforms.lightDirection.value, "y", -1, 1, 0.01)
+  .name("Light Y");
+gui
+  .add(floorMaterial.uniforms.lightDirection.value, "z", -1, 1, 0.01)
+  .name("Light Z");

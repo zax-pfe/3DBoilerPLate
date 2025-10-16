@@ -1,10 +1,11 @@
 import gsap from "gsap";
-
 export function createDreamTimeline(
   camera,
   controls,
   floorMaterial,
-  monsterRef
+  monsterRef,
+  overlayPanel,
+  overlayText
 ) {
   const timeline = gsap.timeline({
     paused: true,
@@ -17,13 +18,12 @@ export function createDreamTimeline(
       duration: 4,
       x: -40,
       y: 3,
-      z: 30,
+      z: 50,
 
       onUpdate: () => {
         const progress = timeline.progress(); // valeur entre 0 et 1
-        // Oscillation sinus pour simuler la marche
-        const amplitude = 0.2; // hauteur du rebond
-        const frequency = 20; // nombre d'oscillations pendant le déplacement
+        const amplitude = 0.2;
+        const frequency = 20;
         camera.position.y =
           3 + Math.sin(progress * frequency * Math.PI * 2) * amplitude;
       },
@@ -36,7 +36,6 @@ export function createDreamTimeline(
     {
       duration: 4,
       x: -45,
-      value: 1, // nouvelle valeur finale
       ease: "power1.in",
     },
     0
@@ -46,17 +45,7 @@ export function createDreamTimeline(
     floorMaterial.uniforms.noiseRatio,
     {
       duration: 4,
-      value: 1, // nouvelle valeur finale
-      ease: "power1.inOut",
-    },
-    0
-  );
-  // Animation du noiseStrength
-  timeline.to(
-    floorMaterial.uniforms.noiseStrength,
-    {
-      duration: 4,
-      value: 2, // nouvelle valeur finale
+      value: 1,
       ease: "power1.inOut",
     },
     0
@@ -65,10 +54,52 @@ export function createDreamTimeline(
     floorMaterial.uniforms.noiseStrength,
     {
       duration: 4,
-      value: 2, // nouvelle valeur finale
+      value: 2,
       ease: "power1.inOut",
     },
     0
+  );
+  timeline.to(
+    floorMaterial.uniforms.noiseStrength,
+    {
+      duration: 4,
+      value: 2,
+      ease: "power1.inOut",
+    },
+    0
+  );
+
+  timeline.to(
+    monsterRef.position,
+    {
+      duration: 4,
+      y: 4,
+      // value: 1,
+      ease: "power1.in",
+    },
+    1.5
+  );
+  timeline.to(
+    controls.target,
+    {
+      duration: 1.5,
+      x: -20,
+      y: 3,
+      z: 49, // Position derrière la caméra
+      onUpdate: () => {
+        controls.update();
+      },
+    },
+    2
+  );
+  timeline.to(
+    overlayPanel,
+    {
+      duration: 2,
+      opacity: 1,
+      ease: "power1.inOut",
+    },
+    2.5
   );
 
   return timeline;
