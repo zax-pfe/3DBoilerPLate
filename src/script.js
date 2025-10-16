@@ -141,7 +141,7 @@ const endtext = document.querySelector(".endtext-container");
 
 // TIMELINES
 textSplitAnimation(overlayText);
-endingSplitAnimation(endtext);
+const endingtimeline = endingSplitAnimation(endtext);
 
 const timeline = createTimeline(
   camera,
@@ -166,24 +166,26 @@ loadMonster(scene).then((monster) => {
     overlayPanel,
     overlayText
   );
-  lastTimeline = createLastTimeline(
-    camera,
-    controls,
-    overlayPanel,
-    overlayText,
-    monsterRef,
-    directionalLight
-  );
+
   dreamTimeline.eventCallback("onComplete", () => {
     lastTimeline.play();
   });
-  lastTimeline.eventCallback("onComplete", () => {
-    console.log("Last timeline terminée");
-    activateBreathing = true;
-    breathingFrequency = 4;
-    breathingAmplitude = 0.0025;
-    endingTextTimeline.play();
-  });
+});
+
+lastTimeline = createLastTimeline(
+  camera,
+  controls,
+  overlayPanel,
+  overlayText,
+  directionalLight
+);
+
+lastTimeline.eventCallback("onComplete", () => {
+  console.log("Last timeline terminée");
+  activateBreathing = true;
+  breathingFrequency = 4;
+  breathingAmplitude = 0.0025;
+  endingtimeline.play();
 });
 
 function activateScrollTimeline(scrollTimeline) {
