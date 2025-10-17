@@ -16,6 +16,7 @@ import { createLastTimeline } from "./lastTimeline";
 import { textSplitAnimation } from "./utils/textSplitAnimation";
 import { createFog } from "./utils/createFog";
 import { endingSplitAnimation } from "./utils/endingSplitAnimation";
+import { runTimeline } from "./utils/runTimeline";
 
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
@@ -24,6 +25,7 @@ import { FilmPass } from "three/examples/jsm/postprocessing/FilmPass.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { RGBShiftShader } from "three/addons/shaders/RGBShiftShader.js";
+import { GlitchPass } from "three/addons/postprocessing/GlitchPass.js";
 
 const data = {
   lightx: 0,
@@ -107,6 +109,8 @@ scene.add(camera);
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = false;
 controls.enableZoom = false;
+controls.enablePan = false;
+controls.enabled = false;
 
 /**
  * Post-processing setup
@@ -127,21 +131,31 @@ const effect2 = new ShaderPass(RGBShiftShader);
 effect2.uniforms["amount"].value = 0.0015;
 composer.addPass(effect2);
 
-const filmPass = new FilmPass(0.25, 0.5, 2048, false);
+const filmPass = new FilmPass(1, 0.5, 2048, false);
 composer.addPass(filmPass);
+
+// const glitchPass = new GlitchPass(1);
+// composer.addPass(glitchPass);
 
 const effect3 = new OutputPass();
 composer.addPass(effect3);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+// TIMELINES
+
 const overlay = document.getElementsByClassName("overlay");
 const overlayPanel = document.getElementsByClassName("overlay-panel");
 const overlayText = document.querySelector(".overlay-text");
-const endtext = document.querySelector(".endtext-container");
+const awake = document.querySelector(".awake");
+const interrogation = document.querySelector(".interrogation");
+const dots = document.querySelector(".dots");
+const run = document.querySelector(".run");
+const runContainer = document.querySelector(".run-container");
+const blackscreen = document.querySelector(".blackscreen");
 
-// TIMELINES
 textSplitAnimation(overlayText);
-const endingtimeline = endingSplitAnimation(endtext);
+const runAnimation = runTimeline(dots, run);
+const endingtimeline = endingSplitAnimation(awake, interrogation);
 
 const timeline = createTimeline(
   camera,
@@ -164,28 +178,29 @@ loadMonster(scene).then((monster) => {
     floorMaterial,
     monsterRef,
     overlayPanel,
-    overlayText
+    runContainer
   );
 
   dreamTimeline.eventCallback("onComplete", () => {
     lastTimeline.play();
   });
-});
 
-lastTimeline = createLastTimeline(
-  camera,
-  controls,
-  overlayPanel,
-  overlayText,
-  directionalLight
-);
-
-lastTimeline.eventCallback("onComplete", () => {
-  console.log("Last timeline terminée");
-  activateBreathing = true;
-  breathingFrequency = 4;
-  breathingAmplitude = 0.0025;
-  endingtimeline.play();
+  lastTimeline = createLastTimeline(
+    camera,
+    controls,
+    overlayPanel,
+    overlayText,
+    directionalLight,
+    monsterRef,
+    blackscreen
+  );
+  lastTimeline.eventCallback("onComplete", () => {
+    console.log("Last timeline terminée");
+    activateBreathing = true;
+    breathingFrequency = 4;
+    breathingAmplitude = 0.0025;
+    endingtimeline.play();
+  });
 });
 
 function activateScrollTimeline(scrollTimeline) {
@@ -208,6 +223,7 @@ startBtn.addEventListener("click", () => {
   timeline.eventCallback("onComplete", () => {
     console.log("Première timeline terminée — activation du scroll control");
     window.scrollTo(0, 0);
+    runAnimation.play();
     activateScrollTimeline(dreamTimeline);
   });
 });
@@ -301,3 +317,4 @@ gui
 gui
   .add(floorMaterial.uniforms.lightDirection.value, "z", -1, 1, 0.01)
   .name("Light Z");
+gui.hide();

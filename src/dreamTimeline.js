@@ -5,12 +5,22 @@ export function createDreamTimeline(
   floorMaterial,
   monsterRef,
   overlayPanel,
-  overlayText
+  runContainer
 ) {
   const timeline = gsap.timeline({
     paused: true,
     onComplete: () => console.log(" Dream Timeline terminée !"),
   });
+
+  timeline.to(
+    runContainer,
+    {
+      duration: 0.5,
+      opacity: 0,
+      ease: "power1.inOut",
+    },
+    0
+  );
 
   timeline.to(
     camera.position,
@@ -21,7 +31,7 @@ export function createDreamTimeline(
       z: 50,
 
       onUpdate: () => {
-        const progress = timeline.progress(); // valeur entre 0 et 1
+        const progress = timeline.progress();
         const amplitude = 0.2;
         const frequency = 20;
         camera.position.y =
@@ -95,11 +105,11 @@ export function createDreamTimeline(
   timeline.to(
     overlayPanel,
     {
-      duration: 2,
+      duration: 1,
       opacity: 1,
-      ease: "power1.inOut",
+      // ease: "power1.inOut",
     },
-    2.5
+    3
   );
 
   return timeline;
